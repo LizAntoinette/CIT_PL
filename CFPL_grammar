@@ -1,0 +1,59 @@
+program :  NEWLINE* comment* (NEWLINE+ declaration)+ NEWLINE+ block
+
+block: START NEWLINE+ statement_list STOP
+
+declaration:  VAR set_variable (COMMA set_variable)* AS type_spec | empty
+
+
+set_variable: ID | ID EQUAL constant
+
+constant: INT|FLOAT|CHAR|BOOL
+
+statement_list: NEWLINE+ statement (NEWLINE+ statement)*
+
+statement:  	 comment
+               | Input_statement
+               | output_statement
+               | assignment_statement
+               | if_statement
+               | ifel_statement
+               | while_statement
+
+comment: ASTERISK_START STRING
+
+input : INPUT COLON ID (COMMA ID)*
+
+output: OUTPUT COLON output_statement (AMPERSAND output_statement)*
+
+output_statement: ID | DQOUTE STRING  DQOUTE
+
+expr    : ID ASSIGN expr
+        : comp-expr ((KEYWORD:AND|KEYWORD:OR) comp-expr)*
+
+comp-expr   : NOT comp-expr
+            : arith-expr ((EE|LT|GT|LTE|GTE) arith-expr)*
+
+arith-expr  :	term ((PLUS|MINUS) term)*
+
+term        : factor ((MUL|DIV) factor)*
+
+factor      : (PLUS|MINUS) factor
+            : atom
+
+atom        : INT|FLOAT|CHAR|BOOL|IDENTIFIER
+            : LPAREN expr RPAREN
+            : input-expr
+            : output-expr
+            : if-expr
+            : for-expr
+            : while-expr
+
+
+if_expr: IF LPAREN bool_expresion RPAREN
+           block (else_statement)?
+
+else_expr: ELSE
+            block
+
+while_expr: WHILE LPAREN bool_expr RPAREN
+            block
