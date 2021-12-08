@@ -1,6 +1,6 @@
 program :  NEWLINE* comment* (NEWLINE+ declaration)+ NEWLINE+ block
 
-block: START NEWLINE+ statement_list STOP
+block: START NEWLINE+ statement_list NEWLINE+ STOP
 
 declaration:  VAR set_variable (COMMA set_variable)* AS type_spec | empty
 
@@ -49,11 +49,8 @@ atom        : INT|FLOAT|CHAR|BOOL|IDENTIFIER
             : while-expr
 
 
-if_expr: IF LPAREN bool_expresion RPAREN
-           block (else_statement)?
+if_expr: IF LPAREN bool_expresion RPAREN NEWLINE+ block (else_statement)?
 
-else_expr: ELSE
-            block
+else_expr: ELSE NEWLINE+ block
 
-while_expr: WHILE LPAREN bool_expr RPAREN
-            block
+while_expr: WHILE LPAREN bool_expr RPAREN NEWLINE+ block

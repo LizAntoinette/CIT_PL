@@ -204,9 +204,11 @@ class Lexer:
         while self.current_char != None:
             if self.current_char in ' \t':
                 self.advance()
-            elif self.current_char == '#':
-                self.skip_comment()
-            elif self.current_char in ';\n':
+            elif self.current_char == '*':
+                tok = self.skip_comment()
+                if (tok != None):
+                    tokens.append(tok)
+            elif self.current_char in '\n':
                 tokens.append(Token(TT_NEWLINE, pos_start=self.pos))
                 self.advance()
             elif self.current_char in DIGITS:
@@ -220,9 +222,6 @@ class Lexer:
                 self.advance()
             elif self.current_char == '-':
                 tokens.append(self.make_minus_or_arrow())
-            elif self.current_char == '*':
-                tokens.append(Token(TT_MUL, pos_start=self.pos))
-                self.advance()
             elif self.current_char == '/':
                 tokens.append(Token(TT_DIV, pos_start=self.pos))
                 self.advance()
@@ -366,12 +365,16 @@ class Lexer:
         return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
     def skip_comment(self):
-        self.advance()
-
-        while self.current_char != '\n':
+        if (self.pos.idx == 0):
             self.advance()
+            while self.current_char != '\n':
+                self.advance()
 
-        self.advance()
+            self.advance()
+            return None
+        else:
+            self.advance()
+            return Token(TT_MUL, pos_start=self.pos)
 
 
 #######################################
