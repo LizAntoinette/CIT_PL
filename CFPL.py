@@ -734,6 +734,80 @@ class Parser:
 
         return res.success(Type(token))
 
+
+# This is to be continued
+##########################################################################################
+    def var_dec(self):
+        """declaration:  VAR set_variable (COMMA set_variable)* AS type_spec | empty"""
+        res = ParseResult()
+        variables = []
+
+        if self.current_tok.matches(TT_KEYWORD, 'VAR'):
+            res.register_advancement()
+            self.advance()
+
+            if self.current_tok.type == TT_IDENTIFIER:
+                variables.append(self.set_variable())
+                while self.current_tok.type == TT_COMMA:
+                    res.register_advancement()
+                    self.advance()
+                    variables.append(self.set_variable())
+            else:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected identifier"
+                ))
+
+            res.register_advancement()
+            self.advance()
+
+            if not self.current_tok.matches(TT_KEYWORD, 'AS'):
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected AS keyword"
+                ))
+
+            res.register_advancement()
+            self.advance()
+
+            type_spec = self.type_spec()
+
+            assigned_Vars = []
+            for var in variables:
+                VarAssignNode(var[0], var[1], type_spec)
+
+            res.register_advancement()
+            self.advance()
+            expr = res.register(self.expr())
+            if res.error: return res
+            return res.success(VarAssignNode(assigned_Vars, expr))
+
+    def type_spec(self):
+        res = ParseResult()
+        token = self.current_tok
+        if self.current_tok.matches(TT_KEYWORD, 'INT'):
+            res.register_advancement()
+            self.advance()
+        elif self.current_tok.matches(TT_KEYWORD, 'CHAR'):
+            res.register_advancement()
+            self.advance()
+        elif self.current_tok.matches(TT_KEYWORD, 'BOOL'):
+            res.register_advancement()
+            self.advance()
+        elif self.current_tok.matches(TT_KEYWORD, 'FLOAT'):
+            res.register_advancement()
+            self.advance()
+        else:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected Data Type - INT, FLOAT, CHAR, BOOL"
+            ))
+
+        return res.success(Token)
+#######################################################################################
+
+
+
     def set_variable(self):
         res = ParseResult()
         if self.current_tok.type != TT_IDENTIFIER:
