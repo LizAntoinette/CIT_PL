@@ -1,9 +1,9 @@
-import CFPL
+import Practice
 
 while True:
 	text = input('> ')
 	if text.strip() == "": continue
-	result, error = CFPL.run('<stdin>', text)
+	result, error = Practice.run('<stdin>', text)
 
 	if error:
 		print(error.as_string())

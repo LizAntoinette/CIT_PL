@@ -695,15 +695,15 @@ class Parser:
                 while self.current_tok.type == TT_COMMA:
                     res.register_advancement()
                     self.advance()
-                    variables.append(self.set_variable())
+                    varia = self.set_variable()
+                    print(varia.node)
+                    variables.append(varia)
+
             else:
                 return res.failure(InvalidSyntaxError(
                     self.current_tok.pos_start, self.current_tok.pos_end,
                     "Expected identifier"
                 ))
-
-            res.register_advancement()
-            self.advance()
 
             if not self.current_tok.matches(TT_KEYWORD, 'AS'):
                 return res.failure(InvalidSyntaxError(
@@ -711,32 +711,31 @@ class Parser:
                     "Expected AS keyword"
                 ))
 
+            print("The Variables")
+            print(variables)
 
             res.register_advancement()
             self.advance()
 
             type_spec = self.type_spec()
-
+            print("after type_spec")
             assigned_Vars = []
             for var in variables:
-                type_var = var[1].type[2:]
-                if type_spec.matches(TT_KEYWORD, type_var):
+                type_var = var[1].type
+                if type_spec.matches(TT_KEYWORD, type_var) :
                     assigned_Vars.append(VarAssignNode(var[0], var[1]))
                 else:
                     return res.failure(InvalidSyntaxError(
                         self.current_tok.pos_start, self.current_tok.pos_end,
-                        "Expected value of " + type.spec
+                        "Expected value of " + type_spec
                     ))
 
-            res.register_advancement()
-            self.advance()
-            expr = res.register(self.expr())
-            if res.error: return res
             return res.success(assigned_Vars)
 
     def set_variable(self):
         """"set_variable: ID | ID EQUAL constant"""
         res = ParseResult()
+        pos_start = self.current_tok.pos_start.copy()
         
         if self.current_tok.type != TT_IDENTIFIER:
             return res.failure(InvalidSyntaxError(
@@ -753,9 +752,13 @@ class Parser:
             res.register_advancement()
             self.advance()
             value = res.register(self.expr())  #Needs to edit here gurl
-            
-        if res.error: return res
-        return res.success([var_name, value])
+            if res.error: return res
+
+
+        val = (var_name , value)
+
+
+        return [var_name , value]
     
     # next time nala it default dinhi heheh
     def default_value(self, token):
@@ -771,16 +774,16 @@ class Parser:
     def type_spec(self):
         res = ParseResult()
         token = self.current_tok
-        if self.current_tok.matches(TT_KEYWORD, 'INT'):
+        if token.matches(TT_KEYWORD, 'INT'):
             res.register_advancement()
             self.advance()
-        elif self.current_tok.matches(TT_KEYWORD, 'CHAR'):
+        elif token.matches(TT_KEYWORD, 'CHAR'):
             res.register_advancement()
             self.advance()
-        elif self.current_tok.matches(TT_KEYWORD, 'BOOL'):
+        elif token.matches(TT_KEYWORD, 'BOOL'):
             res.register_advancement()
             self.advance()
-        elif self.current_tok.matches(TT_KEYWORD, 'FLOAT'):
+        elif token.matches(TT_KEYWORD, 'FLOAT'):
             res.register_advancement()
             self.advance()
         else:
@@ -794,31 +797,7 @@ class Parser:
     def expr(self):
         res = ParseResult()
 
-        if self.current_tok.matches(TT_KEYWORD, 'VAR'):
-            res.register_advancement()
-            self.advance()
-
-            if self.current_tok.type != TT_IDENTIFIER:
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    "Expected identifier"
-                ))
-
-            var_name = self.current_tok
-            res.register_advancement()
-            self.advance()
-
-            if self.current_tok.type != TT_EQ:
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    "Expected '='"
-                ))
-
-            res.register_advancement()
-            self.advance()
-            expr = res.register(self.expr())
-            if res.error: return res
-            return res.success(VarAssignNode(var_name, expr))
+        self.var_dec()
 
         node = res.register(self.bin_op(self.comp_expr, ((TT_KEYWORD, 'AND'), (TT_KEYWORD, 'OR'))))
 
