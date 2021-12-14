@@ -107,6 +107,8 @@ class Position:
 TT_INT = 'INT'
 TT_FLOAT = 'FLOAT'
 TT_STRING = 'STRING'
+TT_BOOL = 'BOOL'
+TT_CHAR = 'CHAR'
 TT_IDENTIFIER = 'IDENTIFIER'
 TT_KEYWORD = 'KEYWORD'
 TT_PLUS = 'PLUS'
@@ -212,12 +214,13 @@ class Lexer:
                 tokens.append(self.make_identifier())
             elif self.current_char == '"':
                 tokens.append(self.make_string())
+            elif self.current_char == "'":
+                tokens.append(self.make_char())
             elif self.current_char == '+':
                 tokens.append(Token(TT_PLUS, pos_start=self.pos))
                 self.advance()
             elif self.current_char == '-':
                 tokens.append(self.make_minus_or_arrow())
-
             elif self.current_char == '/':
                 tokens.append(Token(TT_DIV, pos_start=self.pos))
                 self.advance()
@@ -258,6 +261,7 @@ class Lexer:
         tokens.append(Token(TT_EOF, pos_start=self.pos))
         return tokens, None
 
+
     def make_number(self):
         num_str = ''
         dot_count = 0
@@ -274,6 +278,31 @@ class Lexer:
             return Token(TT_INT, int(num_str), pos_start, self.pos)
         else:
             return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
+
+    def make_char(self):
+        char = ''
+        pos_start = self.pos.copy()
+        escape_character = False
+        self.advance()
+
+        escape_characters = {
+            'n': '\n',
+            't': '\t'
+        }
+
+        if self.current_char != None and (self.current_char != "'" or escape_character):
+            if escape_character:
+                char += escape_characters.get(self.current_char, self.current_char)
+            else:
+                if self.current_char == '\\':
+                    escape_character = True
+                else:
+                    char += self.current_char
+            self.advance()
+            escape_character = False
+
+        self.advance()
+        return Token(TT_CHAR, char, pos_start, self.pos)
 
     def make_string(self):
         string = ''
@@ -298,7 +327,12 @@ class Lexer:
             escape_character = False
 
         self.advance()
-        return Token(TT_STRING, string, pos_start, self.pos)
+        if string == "TRUE":
+            return Token(TT_BOOL, True, pos_start, self.pos)
+        elif string == "FALSE":
+            return Token(TT_BOOL, False, pos_start, self.pos)
+        else:
+            return Token(TT_STRING, string, pos_start, self.pos)
 
     def make_identifier(self):
         id_str = ''
@@ -386,6 +420,26 @@ class Lexer:
 #######################################
 
 class NumberNode:
+    def __init__(self, tok):
+        self.tok = tok
+
+        self.pos_start = self.tok.pos_start
+        self.pos_end = self.tok.pos_end
+
+    def __repr__(self):
+        return f'{self.tok}'
+
+class BoolNode:
+    def __init__(self, tok):
+        self.tok = tok
+
+        self.pos_start = self.tok.pos_start
+        self.pos_end = self.tok.pos_end
+
+    def __repr__(self):
+        return f'{self.tok}'
+
+class CharNode:
     def __init__(self, tok):
         self.tok = tok
 
@@ -611,7 +665,9 @@ class Parser:
         return res
 
     ###################################
+    def program(self):
 
+        pass
     def statements(self):
         res = ParseResult()
         statements = []
@@ -741,6 +797,8 @@ class Parser:
             return True
         elif data_type == 'FLOAT' and (isinstance(type_node, NumberNode) or type_node == None):
             return True
+        elif data_type == 'CHAR' and (isinstance(type_node, CharNode) or type_node == None):
+            return True
         return False
 
 
@@ -778,11 +836,11 @@ class Parser:
             print(int('0'))
             return NumberNode(Token(TT_INT, int('0'), pos_start, pos))
         elif token == 'CHAR':
-            return ''
+            return CharNode(Token(TT_CHAR, '', pos_start, pos))
         elif token == 'FLOAT':
             return NumberNode(Token(TT_FLOAT, float('0.0') , pos_start, pos))
         elif token == 'BOOL':
-            return False
+            return BoolNode(Token(TT_BOOL, False, pos_start, self.pos))
 
     def type_spec(self):
         res = ParseResult()
@@ -975,6 +1033,16 @@ class Parser:
             res.register_advancement()
             self.advance()
             return res.success(NumberNode(tok))
+
+        elif tok.type == TT_BOOL:
+            res.register_advancement()
+            self.advance()
+            return res.success(BoolNode(tok))
+
+        elif tok.type == TT_CHAR:
+            res.register_advancement()
+            self.advance()
+            return res.success(CharNode(tok))
 
         elif tok.type == TT_STRING:
             res.register_advancement()
@@ -1695,9 +1763,57 @@ class Number(Value):
         return str(self.value)
 
 
+class Bool(Value):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+
+    def get_comparison_eq(self, other):
+        if isinstance(other, Bool):
+            return Bool((self.value == other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
+
+    def get_comparison_ne(self, other):
+        if isinstance(other, Bool):
+            return Bool((self.value != other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
+
+    def anded_by(self, other):
+        if isinstance(other, Bool):
+            return Bool((self.value and other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
+
+    def ored_by(self, other):
+        if isinstance(other, Bool):
+            return Bool((self.value or other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
+
+    def notted(self):
+        return Bool(True if self.value == False else False).set_context(self.context), None
+
+    def copy(self):
+        copy = Bool(self.value)
+        copy.set_pos(self.pos_start, self.pos_end)
+        copy.set_context(self.context)
+        return copy
+
+    def is_true(self):
+        return self.value != False
+
+    def __str__(self):
+        return str(self.value)
+
+    def __repr__(self):
+        return str(self.value)
+
+
 Number.null = Number(0)
-Number.false = Number(0)
-Number.true = Number(1)
+Bool.false = Bool(True)
+Bool.true = Bool(False)
 Number.math_PI = Number(math.pi)
 
 
@@ -1732,6 +1848,27 @@ class String(Value):
 
     def __repr__(self):
         return f'"{self.value}"'
+
+class Char(Value):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+
+    def is_true(self):
+        return len(self.value) > 0
+
+    def copy(self):
+        copy = Char(self.value)
+        copy.set_pos(self.pos_start, self.pos_end)
+        copy.set_context(self.context)
+        return copy
+
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return f"'{self.value}'"
+
 
 
 class List(Value):
@@ -2149,6 +2286,16 @@ class Interpreter:
             Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
         )
 
+    def visit_BoolNode(self, node, context):
+        return RTResult().success(
+            Bool(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
+
+    def visit_CharNode(self, node, context):
+        return RTResult().success(
+            Char(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
+
     def visit_StringNode(self, node, context):
         return RTResult().success(
             String(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
@@ -2391,8 +2538,8 @@ class Interpreter:
 
 global_symbol_table = SymbolTable()
 global_symbol_table.set("NULL", Number.null)
-global_symbol_table.set("FALSE", Number.false)
-global_symbol_table.set("TRUE", Number.true)
+global_symbol_table.set("FALSE", Bool.false)
+global_symbol_table.set("TRUE", Bool.true)
 global_symbol_table.set("MATH_PI", Number.math_PI)
 global_symbol_table.set("PRINT", BuiltInFunction.print)
 global_symbol_table.set("PRINT_RET", BuiltInFunction.print_ret)
