@@ -173,7 +173,7 @@ class Token:
         return self.type == type_ and self.value == value
 
     def __repr__(self):
-        if self.value: return f'{self.type}:{self.value}'
+        if self.value or self.value == 0 or self.value == 0.0: return f'{self.type}:{self.value}'
         return f'{self.type}'
 
 
@@ -737,7 +737,9 @@ class Parser:
             return res.success(assigned_Vars)
 
     def type_matches(self, data_type, type_node):
-        if data_type == 'INT' and isinstance(type_node, NumberNode):
+        if data_type == 'INT' and (isinstance(type_node, NumberNode) or type_node == None):
+            return True
+        elif data_type == 'FLOAT' and (isinstance(type_node, NumberNode) or type_node == None):
             return True
         return False
 
@@ -771,13 +773,14 @@ class Parser:
         return [var_name , value]
     
     # next time nala it default dinhi heheh
-    def default_value(self, token):
+    def default_value(self, token, pos_start, pos):
         if token== 'INT':
-            return 0
+            print(int('0'))
+            return NumberNode(Token(TT_INT, int('0'), pos_start, pos))
         elif token == 'CHAR':
             return ''
         elif token == 'FLOAT':
-            return 0.0
+            return NumberNode(Token(TT_FLOAT, float('0.0') , pos_start, pos))
         elif token == 'BOOL':
             return False
 
@@ -826,7 +829,6 @@ class Parser:
                     res.register_advancement()
                     self.advance()
                     varia = self.set_variable()
-                    print(varia.node)
                     variables.append(varia)
 
             else:
@@ -852,10 +854,11 @@ class Parser:
             assigned_Vars = []
             # make sure this is working first thing tommorow
             for var in variables:
-                type_var = var[1]
+                type_var = var[1] if (var[1] != None) else self.default_value(type_spec, pos_start, self.current_tok.pos_end)
 
-                if self.type_matches(type_spec, var[1]):
-                    assigned_Vars.append(VarAssignNode(var[0], var[1]))
+                if self.type_matches(type_spec, type_var):
+                    assigned_Vars.append(VarAssignNode(var[0], type_var))
+
                 else:
                     return res.failure(InvalidSyntaxError(
                         self.current_tok.pos_start, self.current_tok.pos_end,
