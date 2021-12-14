@@ -128,6 +128,7 @@ TT_GT = 'GT'
 TT_LTE = 'LTE'
 TT_GTE = 'GTE'
 TT_COMMA = 'COMMA'
+TT_COLON = 'COLON'
 TT_ARROW = 'ARROW'
 TT_NEWLINE = 'NEWLINE'
 TT_EOF = 'EOF'
@@ -155,6 +156,8 @@ KEYWORDS = [
     'RETURN',
     'CONTINUE',
     'BREAK',
+    'INPUT',
+    'OUTPUT'
 ]
 
 
@@ -251,6 +254,9 @@ class Lexer:
                 tokens.append(self.make_greater_than())
             elif self.current_char == ',':
                 tokens.append(Token(TT_COMMA, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == ':':
+                tokens.append(Token(TT_COLON, pos_start=self.pos))
                 self.advance()
             else:
                 pos_start = self.pos.copy()
@@ -827,7 +833,6 @@ class Parser:
             value = res.register(self.expr())  #Needs to edit here gurl
             if res.error: return res
 
-
         val = (var_name , value)
 
         return [var_name , value]
@@ -988,6 +993,8 @@ class Parser:
     def power(self):
         return self.bin_op(self.call, (TT_POW,), self.factor)
 
+
+
     def call(self):
         res = ParseResult()
         atom = res.register(self.atom())
@@ -1096,6 +1103,11 @@ class Parser:
             if res.error: return res
             return res.success(func_def)
 
+        elif tok.matches(TT_KEYWORD, 'INPUT'):
+            func_def = res.register(self.input_expr())
+            if res.error: return res
+            return res.success(func_def)
+
         return res.failure(InvalidSyntaxError(
             tok.pos_start, tok.pos_end,
             "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'WHILE', 'FUN'"
@@ -1147,6 +1159,77 @@ class Parser:
             pos_start,
             self.current_tok.pos_end.copy()
         ))
+
+    #The output chuchu something
+    def output_expr(self):
+        res = ParseResult()
+        input_var = []
+        pos_start = self.current_tok.pos_start.copy()
+
+        if not self.current_tok.matches(TT_KEYWORD, 'OUTPUT'):
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected OUTPUT keyword"
+            ))
+
+        res.register_advancement()
+        self.advance()
+
+        if self.current_tok.type != TT_COLON:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected : after output"
+            ))
+
+        res.register_advancement()
+        self.advance()
+
+
+        pass
+
+    #This is still not working for scanning
+    def input_expr(self):
+        res = ParseResult()
+        input_var = []
+        pos_start = self.current_tok.pos_start.copy()
+
+        if not self.current_tok.matches(TT_KEYWORD, 'INPUT'):
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected INPUT keyword"
+            ))
+
+        res.register_advancement()
+        self.advance()
+
+        if self.current_tok.type != TT_COLON:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected : after input"
+            ))
+
+        res.register_advancement()
+        self.advance()
+
+
+        if self.current_tok.type == TT_IDENTIFIER:
+            input_var.append(self.current_tok)
+            while self.current_tok.type == TT_COMMA:
+                res.register_advancement()
+                self.advance()
+                input_var.append(self.current_tok)
+        else:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected identifier for input"
+            ))
+
+        return res.success(ListNode(
+            input_var,
+            pos_start,
+            self.current_tok.pos_end.copy()
+        ))
+
 
     def if_expr(self):
         res = ParseResult()
