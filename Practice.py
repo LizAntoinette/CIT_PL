@@ -799,6 +799,8 @@ class Parser:
             return True
         elif data_type == 'CHAR' and (isinstance(type_node, CharNode) or type_node == None):
             return True
+        elif data_type == 'BOOL' and (isinstance(type_node, BoolNode) or type_node == None):
+            return True
         return False
 
 
@@ -840,7 +842,7 @@ class Parser:
         elif token == 'FLOAT':
             return NumberNode(Token(TT_FLOAT, float('0.0') , pos_start, pos))
         elif token == 'BOOL':
-            return BoolNode(Token(TT_BOOL, False, pos_start, self.pos))
+            return BoolNode(Token(TT_BOOL, False, pos_start, pos))
 
     def type_spec(self):
         res = ParseResult()
