@@ -718,19 +718,30 @@ class Parser:
             self.advance()
 
             type_spec = self.type_spec()
-            print("after type_spec")
+
             assigned_Vars = []
+            # make sure this is working first thing tommorow
             for var in variables:
-                type_var = var[1].type
-                if type_spec.matches(TT_KEYWORD, type_var) :
+                type_var = var[1]
+
+                if self.type_matches(type_spec, var[1]):
                     assigned_Vars.append(VarAssignNode(var[0], var[1]))
                 else:
                     return res.failure(InvalidSyntaxError(
                         self.current_tok.pos_start, self.current_tok.pos_end,
                         "Expected value of " + type_spec
                     ))
+                print("the loop is working")
 
+            print("Now returning the VARs")
             return res.success(assigned_Vars)
+
+    def type_matches(self, data_type, type_node):
+        if data_type == 'INT' and isinstance(type_node, NumberNode):
+            return True
+        return False
+
+
 
     def set_variable(self):
         """"set_variable: ID | ID EQUAL constant"""
@@ -757,7 +768,6 @@ class Parser:
 
         val = (var_name , value)
 
-
         return [var_name , value]
     
     # next time nala it default dinhi heheh
@@ -774,30 +784,92 @@ class Parser:
     def type_spec(self):
         res = ParseResult()
         token = self.current_tok
+        data_type = None
         if token.matches(TT_KEYWORD, 'INT'):
             res.register_advancement()
             self.advance()
+            data_type = "INT"
         elif token.matches(TT_KEYWORD, 'CHAR'):
             res.register_advancement()
             self.advance()
+            data_type = "CHAR"
         elif token.matches(TT_KEYWORD, 'BOOL'):
             res.register_advancement()
             self.advance()
+            data_type = "BOOL"
         elif token.matches(TT_KEYWORD, 'FLOAT'):
             res.register_advancement()
             self.advance()
+            data_type = "FLOAT"
         else:
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
                 "Expected Data Type - INT, FLOAT, CHAR, BOOL"
             ))
 
-        return res.success(Token)
+        return data_type
 
+
+    # something is wrong here talaga huhums
     def expr(self):
         res = ParseResult()
+        pos_start = self.current_tok.pos_start.copy()
+        variables = []
 
-        self.var_dec()
+        if self.current_tok.matches(TT_KEYWORD, 'VAR'):
+            res.register_advancement()
+            self.advance()
+
+            if self.current_tok.type == TT_IDENTIFIER:
+                variables.append(self.set_variable())
+                while self.current_tok.type == TT_COMMA:
+                    res.register_advancement()
+                    self.advance()
+                    varia = self.set_variable()
+                    print(varia.node)
+                    variables.append(varia)
+
+            else:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected identifier"
+                ))
+
+            if not self.current_tok.matches(TT_KEYWORD, 'AS'):
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected AS keyword"
+                ))
+
+            print("The Variables")
+            print(variables)
+
+            res.register_advancement()
+            self.advance()
+
+            type_spec = self.type_spec()
+
+            assigned_Vars = []
+            # make sure this is working first thing tommorow
+            for var in variables:
+                type_var = var[1]
+
+                if self.type_matches(type_spec, var[1]):
+                    assigned_Vars.append(VarAssignNode(var[0], var[1]))
+                else:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_tok.pos_start, self.current_tok.pos_end,
+                        "Expected value of " + type_spec
+                    ))
+                print("the loop is working")
+
+            print("Now returning the VARs")
+            # return res.success(assigned_Vars)
+            return res.success(ListNode(
+                assigned_Vars,
+                pos_start,
+                self.current_tok.pos_end.copy()
+            ))
 
         node = res.register(self.bin_op(self.comp_expr, ((TT_KEYWORD, 'AND'), (TT_KEYWORD, 'OR'))))
 
