@@ -2096,7 +2096,7 @@ class Interpreter:
         right = res.register(self.visit(node.right_node, context))
         if res.should_return(): return res
 
-        if node.op_tok.type == TT_PLUS:
+        if node.op_tok.type == TT_PLUS :
             result, error = left.added_to(right)
         elif node.op_tok.type == TT_MINUS:
             result, error = left.subbed_by(right)

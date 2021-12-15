@@ -130,6 +130,7 @@ TT_GTE = 'GTE'
 TT_COMMA = 'COMMA'
 TT_COLON = 'COLON'
 TT_ARROW = 'ARROW'
+TT_AMPERSAND = 'AMPERSAND'
 TT_NEWLINE = 'NEWLINE'
 TT_EOF = 'EOF'
 
@@ -221,6 +222,9 @@ class Lexer:
                 tokens.append(self.make_char())
             elif self.current_char == '+':
                 tokens.append(Token(TT_PLUS, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == '&':
+                tokens.append(Token(TT_AMPERSAND, pos_start=self.pos))
                 self.advance()
             elif self.current_char == '-':
                 tokens.append(self.make_minus_or_arrow())
@@ -970,7 +974,7 @@ class Parser:
         return res.success(node)
 
     def arith_expr(self):
-        return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
+        return self.bin_op(self.term, (TT_PLUS, TT_AMPERSAND, TT_MINUS))
 
     def term(self):
         return self.bin_op(self.factor, (TT_MUL, TT_DIV))
@@ -2427,7 +2431,9 @@ class Interpreter:
         right = res.register(self.visit(node.right_node, context))
         if res.should_return(): return res
 
-        if node.op_tok.type == TT_PLUS:
+        if node.op_tok.type == TT_AMPERSAND:
+            result, error = left.added_to(right)
+        elif node.op_tok.type == TT_PLUS:
             result, error = left.added_to(right)
         elif node.op_tok.type == TT_MINUS:
             result, error = left.subbed_by(right)
