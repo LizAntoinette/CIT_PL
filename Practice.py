@@ -1910,8 +1910,8 @@ class String(Value):
         self.value = value
 
     def added_to(self, other):
-        if isinstance(other, String):
-            return String(self.value + other.value).set_context(self.context), None
+        if isinstance(other, String) or isinstance(other,Number):
+            return String(f'{self.value}{other.value}').set_context(self.context), None
         else:
             return None, Value.illegal_operation(self, other)
 
