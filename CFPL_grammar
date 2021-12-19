@@ -16,7 +16,7 @@ statement:  	 comment
                | output_statement
                | assignment_statement
                | if_statement
-               | ifel_statement
+               | ifelse_statement
                | while_statement
 
 comment: ASTERISK_START STRING

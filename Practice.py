@@ -760,68 +760,119 @@ class Parser:
             self.advance()
             return res.success(BreakNode(pos_start, self.current_tok.pos_start.copy()))
 
-        expr = res.register(self.expr())
-        if res.error:
-            return res.failure(InvalidSyntaxError(
-                self.current_tok.pos_start, self.current_tok.pos_end,
-                "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
-            ))
-        return res.success(expr)
+        if self.current_tok.matches(TT_KEYWORD, 'VAR'):
+            res.register_advancement()
+            self.advance()
+            variables =  res.register(self.var_dec())
+            if res.error:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Somthing is wrong with your variables"
+                ))
+            return res.success(variables)
+
+
+        if self.current_tok.type == TT_IDENTIFIER:
+            var_name = self.current_tok
+            res.register_advancement()
+            self.advance()
+
+            if self.current_tok.type != TT_EQ:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected '='"
+                ))
+
+            res.register_advancement()
+            self.advance()
+            value = res.register(self.expr())  # Needs to edit here gurl
+            if res.error: return res
+            return res.success(VarAssignNode(var_name, value))
+
+        if self.current_tok.matches(TT_KEYWORD, 'OUTPUT'):
+            res.register_advancement()
+            self.advance()
+            if self.current_tok.type != TT_COLON:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected Colon"
+                ))
+            res.register_advancement()
+            self.advance()
+            expr = res.register(self.expr())
+            if res.error:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+                ))
+            return res.success(expr)
+
+
+        # expr = res.register(self.expr())
+        # if res.error:
+        #     return res.failure(InvalidSyntaxError(
+        #         self.current_tok.pos_start, self.current_tok.pos_end,
+        #         "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+        #     ))
+        # return res.success(expr)
 
     def var_dec(self):
         """declaration:  VAR set_variable (COMMA set_variable)* AS type_spec | empty"""
         res = ParseResult()
+        pos_start = self.current_tok.pos_start.copy()
         variables = []
 
-        if self.current_tok.matches(TT_KEYWORD, 'VAR'):
-            res.register_advancement()
-            self.advance()
+        if self.current_tok.type == TT_IDENTIFIER:
+            variables.append(self.set_variable())
+            while self.current_tok.type == TT_COMMA:
+                res.register_advancement()
+                self.advance()
+                varia = self.set_variable()
+                variables.append(varia)
 
-            if self.current_tok.type == TT_IDENTIFIER:
-                variables.append(self.set_variable())
-                while self.current_tok.type == TT_COMMA:
-                    res.register_advancement()
-                    self.advance()
-                    varia = self.set_variable()
-                    print(varia.node)
-                    variables.append(varia)
+        else:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected identifier"
+            ))
+
+        if not self.current_tok.matches(TT_KEYWORD, 'AS'):
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected AS keyword"
+            ))
+
+        print("The Variables")
+        print(variables)
+
+        res.register_advancement()
+        self.advance()
+
+        type_spec = self.type_spec()
+
+        assigned_Vars = []
+        # make sure this is working first thing tommorow
+        for var in variables:
+            type_var = var[1] if (var[1] != None) else self.default_value(type_spec, pos_start,
+                                                                          self.current_tok.pos_end)
+
+            if self.type_matches(type_spec, type_var):
+                assigned_Vars.append(VarAssignNode(var[0], type_var))
 
             else:
                 return res.failure(InvalidSyntaxError(
                     self.current_tok.pos_start, self.current_tok.pos_end,
-                    "Expected identifier"
+                    "Expected value of " + type_spec
                 ))
+            print("the loop is working")
 
-            if not self.current_tok.matches(TT_KEYWORD, 'AS'):
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    "Expected AS keyword"
-                ))
-
-            print("The Variables")
-            print(variables)
-
-            res.register_advancement()
-            self.advance()
-
-            type_spec = self.type_spec()
-
-            assigned_Vars = []
-            # make sure this is working first thing tommorow
-            for var in variables:
-                type_var = var[1]
-
-                if self.type_matches(type_spec, var[1]):
-                    assigned_Vars.append(VarAssignNode(var[0], var[1]))
-                else:
-                    return res.failure(InvalidSyntaxError(
-                        self.current_tok.pos_start, self.current_tok.pos_end,
-                        "Expected value of " + type_spec
-                    ))
-                print("the loop is working")
-
-            print("Now returning the VARs")
-            return res.success(assigned_Vars)
+        print("Now returning the VARs")
+        # return res.success(assigned_Vars)
+        return res.success(ListNode(
+            assigned_Vars,
+            pos_start,
+            self.current_tok.pos_end.copy()
+        ))
 
     def type_matches(self, data_type, type_node):
         if data_type == 'INT' and (isinstance(type_node, NumberNode) or type_node == None):
@@ -906,63 +957,6 @@ class Parser:
     # something is wrong here talaga huhums
     def expr(self):
         res = ParseResult()
-        pos_start = self.current_tok.pos_start.copy()
-        variables = []
-
-        if self.current_tok.matches(TT_KEYWORD, 'VAR'):
-            res.register_advancement()
-            self.advance()
-
-            if self.current_tok.type == TT_IDENTIFIER:
-                variables.append(self.set_variable())
-                while self.current_tok.type == TT_COMMA:
-                    res.register_advancement()
-                    self.advance()
-                    varia = self.set_variable()
-                    variables.append(varia)
-
-            else:
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    "Expected identifier"
-                ))
-
-            if not self.current_tok.matches(TT_KEYWORD, 'AS'):
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    "Expected AS keyword"
-                ))
-
-            print("The Variables")
-            print(variables)
-
-            res.register_advancement()
-            self.advance()
-
-            type_spec = self.type_spec()
-
-            assigned_Vars = []
-            # make sure this is working first thing tommorow
-            for var in variables:
-                type_var = var[1] if (var[1] != None) else self.default_value(type_spec, pos_start, self.current_tok.pos_end)
-
-                if self.type_matches(type_spec, type_var):
-                    assigned_Vars.append(VarAssignNode(var[0], type_var))
-
-                else:
-                    return res.failure(InvalidSyntaxError(
-                        self.current_tok.pos_start, self.current_tok.pos_end,
-                        "Expected value of " + type_spec
-                    ))
-                print("the loop is working")
-
-            print("Now returning the VARs")
-            # return res.success(assigned_Vars)
-            return res.success(ListNode(
-                assigned_Vars,
-                pos_start,
-                self.current_tok.pos_end.copy()
-            ))
 
         node = res.register(self.bin_op(self.comp_expr, ((TT_KEYWORD, 'AND'), (TT_KEYWORD, 'OR'))))
 
@@ -986,7 +980,8 @@ class Parser:
             if res.error: return res
             return res.success(UnaryOpNode(op_tok, node))
         # EDITED SOME FOR EQUALS HERE AHHHHHDFJSKASDFLJDSAF
-        node = res.register(self.bin_op(self.arith_expr, (TT_EQ, TT_EE, TT_NE, TT_LT, TT_GT, TT_LTE, TT_GTE)))
+
+        node = res.register(self.bin_op(self.arith_expr, ( TT_EE, TT_NE, TT_LT, TT_GT, TT_LTE, TT_GTE)))
 
         if res.error:
             return res.failure(InvalidSyntaxError(
@@ -1623,8 +1618,8 @@ class Parser:
             res.register_advancement()
             self.advance()
             right = res.register(func_b())
-            if self.current_tok.type == TT_EQ:
-                return res.success(VarAssignNode(left, right))
+            # if self.current_tok.type == TT_EQ:
+            #     return res.success(VarAssignNode(left, right))
             if res.error: return res
             left = BinOpNode(left, op_tok, right)
 
@@ -2462,15 +2457,15 @@ class Interpreter:
 
         if node.op_tok.type == TT_AMPERSAND:
             result, error = left.added_to(right)
-        elif node.op_tok.type == TT_EQ:
-            var_name = node.left_node.var_name_tok.value
-            print("this is from binOp")
-            print(var_name)
-            value = res.register(self.visit(node.right_node, context))
-            if res.should_return(): return res
-
-            context.symbol_table.set(var_name, value)
-            return res.success(value)
+        # elif node.op_tok.type == TT_EQ:
+        #     var_name = node.left_node.var_name_tok.value
+        #     print("this is from binOp")
+        #     print(var_name)
+        #     value = res.register(self.visit(node.right_node, context))
+        #     if res.should_return(): return res
+        #
+        #     context.symbol_table.set(var_name, value)
+        #     return res.success(value)
         elif node.op_tok.type == TT_PLUS:
             result, error = left.added_to(right)
         elif node.op_tok.type == TT_MINUS:
