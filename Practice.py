@@ -209,7 +209,7 @@ class Lexer:
                 tok = self.skip_comment()
                 if(tok != None):
                     tokens.append(tok)
-            elif self.current_char in ';\n':
+            elif self.current_char in '\n':
                 tokens.append(Token(TT_NEWLINE, pos_start=self.pos))
                 self.advance()
             elif self.current_char in DIGITS:
@@ -302,6 +302,7 @@ class Lexer:
 
         if self.current_char != None and (self.current_char != "'" or escape_character):
             if escape_character:
+
                 char += escape_characters.get(self.current_char, self.current_char)
             else:
                 if self.current_char == '\\':
@@ -324,17 +325,35 @@ class Lexer:
             'n': '\n',
             't': '\t'
         }
-
-        while self.current_char != None and (self.current_char != '"' or escape_character):
-            if escape_character:
-                string += escape_characters.get(self.current_char, self.current_char)
-            else:
-                if self.current_char == '\\':
-                    escape_character = True
-                else:
-                    string += self.current_char
+        count = 0
+        while self.current_char != None and self.current_char != '"':
+            if self.current_char == '[' and not escape_character:
+                escape_character = True
+            elif (self.current_char in ('#', ']', '[')  and escape_character and count != 1) :
+                string += self.current_char
+                count = 1
+            elif (not self.current_char in ( '#',']', '[')  and not escape_character):
+                string += self.current_char
+            elif self.current_char == '#' and not escape_character:
+                string +='\n'
+            elif self.current_char == ']' and not escape_character:
+                return None, ExpectedCharError(pos_start, self.pos, "'[' (before escape character and  ']')")
+            elif self.current_char == ']' and escape_character:
+                escape_character = False
+            #     print(escape_character)
+            #     print(escape_characters.get(self.current_char, self.current_char))
+            #     string += escape_characters.get(self.current_char, self.current_char)
+            # else:
+            #     if self.current_char == '\\':
+            #         escape_character = True
+            #     else:
             self.advance()
-            escape_character = False
+
+        # string = string.replace('\\n', '\n')
+        # string = string.replace('#', '\n')
+        # string = string.replace('\\t', '\t')
+        # string.replace('\n', ',')
+        # print(string)
 
         self.advance()
         if string == "TRUE":
@@ -396,6 +415,10 @@ class Lexer:
         if self.current_char == '=':
             self.advance()
             tok_type = TT_LTE
+
+        elif self.current_char == '>':
+            self.advance()
+            tok_type = TT_NE
 
         return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
@@ -1619,6 +1642,7 @@ class RTResult:
         self.error = None
         self.func_return_value = None
         self.loop_should_continue = False
+        self.loop_should_continue = False
         self.loop_should_break = False
 
     def register(self, res):
@@ -1785,49 +1809,49 @@ class Number(Value):
 
     def get_comparison_eq(self, other):
         if isinstance(other, Number):
-            return Number(int(self.value == other.value)).set_context(self.context), None
+            return Bool((self.value == other.value)).set_context(self.context), None
         else:
             return None, Value.illegal_operation(self, other)
 
     def get_comparison_ne(self, other):
         if isinstance(other, Number):
-            return Number(int(self.value != other.value)).set_context(self.context), None
+            return Bool((self.value != other.value)).set_context(self.context), None
         else:
             return None, Value.illegal_operation(self, other)
 
     def get_comparison_lt(self, other):
         if isinstance(other, Number):
-            return Number(int(self.value < other.value)).set_context(self.context), None
+            return Bool((self.value < other.value)).set_context(self.context), None
         else:
             return None, Value.illegal_operation(self, other)
 
     def get_comparison_gt(self, other):
         if isinstance(other, Number):
-            return Number(int(self.value > other.value)).set_context(self.context), None
+            return Bool((self.value > other.value)).set_context(self.context), None
         else:
             return None, Value.illegal_operation(self, other)
 
     def get_comparison_lte(self, other):
         if isinstance(other, Number):
-            return Number(int(self.value <= other.value)).set_context(self.context), None
+            return Bool((self.value <= other.value)).set_context(self.context), None
         else:
             return None, Value.illegal_operation(self, other)
 
     def get_comparison_gte(self, other):
         if isinstance(other, Number):
-            return Number(int(self.value >= other.value)).set_context(self.context), None
+            return Bool((self.value >= other.value)).set_context(self.context), None
         else:
             return None, Value.illegal_operation(self, other)
 
     def anded_by(self, other):
         if isinstance(other, Number):
-            return Number(int(self.value and other.value)).set_context(self.context), None
+            return Bool((self.value and other.value)).set_context(self.context), None
         else:
             return None, Value.illegal_operation(self, other)
 
     def ored_by(self, other):
         if isinstance(other, Number):
-            return Number(int(self.value or other.value)).set_context(self.context), None
+            return Bool((self.value or other.value)).set_context(self.context), None
         else:
             return None, Value.illegal_operation(self, other)
 
@@ -1892,7 +1916,7 @@ class Bool(Value):
         return self.value != False
 
     def __str__(self):
-        return str(self.value)
+        return str(self.value).upper()
 
     def __repr__(self):
         return str(self.value)
