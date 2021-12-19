@@ -985,8 +985,8 @@ class Parser:
             node = res.register(self.comp_expr())
             if res.error: return res
             return res.success(UnaryOpNode(op_tok, node))
-
-        node = res.register(self.bin_op(self.arith_expr, (TT_EE, TT_NE, TT_LT, TT_GT, TT_LTE, TT_GTE)))
+        # EDITED SOME FOR EQUALS HERE AHHHHHDFJSKASDFLJDSAF
+        node = res.register(self.bin_op(self.arith_expr, (TT_EQ, TT_EE, TT_NE, TT_LT, TT_GT, TT_LTE, TT_GTE)))
 
         if res.error:
             return res.failure(InvalidSyntaxError(
@@ -1623,8 +1623,11 @@ class Parser:
             res.register_advancement()
             self.advance()
             right = res.register(func_b())
+            if self.current_tok.type == TT_EQ:
+                return res.success(VarAssignNode(left, right))
             if res.error: return res
             left = BinOpNode(left, op_tok, right)
+
 
         return res.success(left)
 
@@ -2442,6 +2445,8 @@ class Interpreter:
     def visit_VarAssignNode(self, node, context):
         res = RTResult()
         var_name = node.var_name_tok.value
+        print("this is from var assign node")
+        print(var_name)
         value = res.register(self.visit(node.value_node, context))
         if res.should_return(): return res
 
@@ -2457,6 +2462,15 @@ class Interpreter:
 
         if node.op_tok.type == TT_AMPERSAND:
             result, error = left.added_to(right)
+        elif node.op_tok.type == TT_EQ:
+            var_name = node.left_node.var_name_tok.value
+            print("this is from binOp")
+            print(var_name)
+            value = res.register(self.visit(node.right_node, context))
+            if res.should_return(): return res
+
+            context.symbol_table.set(var_name, value)
+            return res.success(value)
         elif node.op_tok.type == TT_PLUS:
             result, error = left.added_to(right)
         elif node.op_tok.type == TT_MINUS:
