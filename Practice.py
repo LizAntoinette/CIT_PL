@@ -807,6 +807,55 @@ class Parser:
                 ))
             return res.success(expr)
 
+        if self.current_tok.matches(TT_KEYWORD, 'INPUT'):
+            res.register_advancement()
+            self.advance()
+            if self.current_tok.type != TT_COLON:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected Colon"
+                ))
+            res.register_advancement()
+            self.advance()
+
+            in_var = []
+            count_id = 0
+            while self.current_tok.type == TT_IDENTIFIER:
+                in_var.append(self.current_tok)
+                res.register_advancement()
+                self.advance()
+                count_id += 1
+                if self.current_tok.type == TT_COMMA:
+                    res.register_advancement()
+                    self.advance()
+
+
+            print(in_var)
+
+            values = None
+            while True:
+                text = input()
+                values = text.split(',')
+                values = [NumberNode(Token(TT_INT, int(x.strip()), pos_start,self.current_tok.pos_end.copy())) for x in values]
+                if(count_id == len(values)):
+                    break
+                else:
+                    print(f"'{text}' must be an integer. Try again!")
+
+            assigned_vars = []
+            for ctr in range(count_id):
+                assigned_vars.append(VarAssignNode(in_var[ctr], values[ctr]))
+
+
+            return res.success(ListNode(
+                assigned_vars,
+                pos_start,
+                self.current_tok.pos_end.copy()
+            ))
+
+
+
+
 
         # expr = res.register(self.expr())
         # if res.error:
@@ -1771,6 +1820,8 @@ class Number(Value):
     def added_to(self, other):
         if isinstance(other, Number):
             return Number(self.value + other.value).set_context(self.context), None
+        elif isinstance(other, String):
+            return String(f'{self.value}{other.value}').set_context(self.context), None
         else:
             return None, Value.illegal_operation(self, other)
 
