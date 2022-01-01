@@ -697,8 +697,45 @@ class Parser:
 
     ###################################
     def program(self):
+        res = ParseResult()
+        statements = []
+        pos_start = self.current_tok.pos_start.copy()
+
+
 
         pass
+
+    def block(self):
+        res = ParseResult()
+        statements = []
+        pos_start = self.current_tok.pos_start.copy()
+
+        if not self.current_tok.matches(TT_KEYWORD, 'START'):
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected START keyword"
+            ))
+        res.register_advancement()
+        self.advance()
+
+        while self.current_tok.type == TT_NEWLINE:
+            res.register_advancement()
+            self.advance()
+
+        statements = res.register(self.statements())
+        if res.error: return res
+
+        if not self.current_tok.matches(TT_KEYWORD, 'STOP'):
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected STOP keyword"
+            ))
+        res.register_advancement()
+        self.advance()
+
+
+        return  statements
+
     def statements(self):
         res = ParseResult()
         statements = []
@@ -869,7 +906,7 @@ class Parser:
         """declaration:  VAR set_variable (COMMA set_variable)* AS type_spec | empty"""
         res = ParseResult()
         pos_start = self.current_tok.pos_start.copy()
-        variables = []
+        variables   = []
 
         if self.current_tok.type == TT_IDENTIFIER:
             variables.append(self.set_variable())
