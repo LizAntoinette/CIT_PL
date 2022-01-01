@@ -701,9 +701,39 @@ class Parser:
         statements = []
         pos_start = self.current_tok.pos_start.copy()
 
+        while self.current_tok.type == TT_NEWLINE:
+            res.register_advancement()
+            self.advance()
+
+        if self.current_tok.matches(TT_KEYWORD, 'VAR'):
+            res.register_advancement()
+            self.advance()
+            variables =  res.register(self.var_dec())
+            if res.error:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Somthing is wrong with your variables"
+                ))
+            return res.success(variables)
+
+        while self.current_tok.type == TT_NEWLINE:
+            res.register_advancement()
+            self.advance()
+
+        block = None
+
+        if not self.current_tok.matches(TT_KEYWORD, 'START'):
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected START keyword"
+            ))
+        else:
+            block = res.register(self.block());
+            if res.error: return res
 
 
-        pass
+
+        return res.success(block)
 
     def block(self):
         res = ParseResult()
@@ -725,6 +755,10 @@ class Parser:
         statements = res.register(self.statements())
         if res.error: return res
 
+        while self.current_tok.type == TT_NEWLINE:
+            res.register_advancement()
+            self.advance()
+            
         if not self.current_tok.matches(TT_KEYWORD, 'STOP'):
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
@@ -734,7 +768,9 @@ class Parser:
         self.advance()
 
 
-        return  statements
+
+
+        return  res.success(statements)
 
     def statements(self):
         res = ParseResult()
@@ -798,15 +834,11 @@ class Parser:
             return res.success(BreakNode(pos_start, self.current_tok.pos_start.copy()))
 
         if self.current_tok.matches(TT_KEYWORD, 'VAR'):
-            res.register_advancement()
-            self.advance()
-            variables =  res.register(self.var_dec())
-            if res.error:
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    "Somthing is wrong with your variables"
-                ))
-            return res.success(variables)
+            return res.failure(InvalidSyntaxError(
+                 self.current_tok.pos_start, self.current_tok.pos_end,
+                "Variable cannot be declared inside the block"
+            ))
+
 
 
         if self.current_tok.type == TT_IDENTIFIER:
