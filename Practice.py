@@ -136,6 +136,7 @@ TT_EOF = 'EOF'
 
 KEYWORDS = [
     'VAR',
+    'RUN',
     'AS',
     'INT',
     'FLOAT',
@@ -340,13 +341,7 @@ class Lexer:
                 return None, ExpectedCharError(pos_start, self.pos, "'[' (before escape character and  ']')")
             elif self.current_char == ']' and escape_character:
                 escape_character = False
-            #     print(escape_character)
-            #     print(escape_characters.get(self.current_char, self.current_char))
-            #     string += escape_characters.get(self.current_char, self.current_char)
-            # else:
-            #     if self.current_char == '\\':
-            #         escape_character = True
-            #     else:
+
             self.advance()
 
         # string = string.replace('\\n', '\n')
@@ -758,7 +753,7 @@ class Parser:
         while self.current_tok.type == TT_NEWLINE:
             res.register_advancement()
             self.advance()
-            
+
         if not self.current_tok.matches(TT_KEYWORD, 'STOP'):
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
@@ -840,7 +835,6 @@ class Parser:
             ))
 
 
-
         if self.current_tok.type == TT_IDENTIFIER:
             var_name = self.current_tok
             res.register_advancement()
@@ -874,6 +868,7 @@ class Parser:
                     self.current_tok.pos_start, self.current_tok.pos_end,
                     "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
                 ))
+
             return res.success(expr)
 
         if self.current_tok.matches(TT_KEYWORD, 'INPUT'):
@@ -2153,7 +2148,7 @@ class List(Value):
         return copy
 
     def __str__(self):
-        return ", ".join([str(x) for x in self.elements])
+        return "".join([str(x) for x in self.elements])
 
     def __repr__(self):
         return f'[{", ".join([repr(x) for x in self.elements])}]'

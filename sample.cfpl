@@ -1,7 +1,8 @@
 * dfjklsfdjlskdf
 * dfjksdfjsld
 * dkfjklsdfjls
-*this is comment
+* this is comment
 
-PRINT("Helloe \n")
-PRINT(9*9)
+OUTPUT:"Helloe #"
+OUTPUT: 9*9 & "#"
+OUTPUT: 9*9-867
