@@ -137,6 +137,8 @@ TT_EOF = 'EOF'
 KEYWORDS = [
     'VAR',
     'RUN',
+    'START',
+    'STOP',
     'AS',
     'INT',
     'FLOAT',
@@ -682,7 +684,7 @@ class Parser:
             self.current_tok = self.tokens[self.tok_idx]
 
     def parse(self):
-        res = self.statements()
+        res = self.program()
         if not res.error and self.current_tok.type != TT_EOF:
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
@@ -721,11 +723,10 @@ class Parser:
         else:
             block = res.register(self.block());
             statements.append(block)
+
             if res.error: return res
 
 
-
-        return res.success(block)
         return res.success(ListNode(
             statements,
             pos_start,
@@ -734,8 +735,9 @@ class Parser:
 
     def block(self):
         res = ParseResult()
-        statements = []
+        state = []
         pos_start = self.current_tok.pos_start.copy()
+
 
         if not self.current_tok.matches(TT_KEYWORD, 'START'):
             return res.failure(InvalidSyntaxError(
@@ -745,16 +747,13 @@ class Parser:
         res.register_advancement()
         self.advance()
 
-        while self.current_tok.type == TT_NEWLINE:
-            res.register_advancement()
-            self.advance()
 
-        statements = res.register(self.statements())
+
+        state = res.register(self.statements())
         if res.error: return res
 
-        while self.current_tok.type == TT_NEWLINE:
-            res.register_advancement()
-            self.advance()
+
+
 
         if not self.current_tok.matches(TT_KEYWORD, 'STOP'):
             return res.failure(InvalidSyntaxError(
@@ -764,10 +763,7 @@ class Parser:
         res.register_advancement()
         self.advance()
 
-
-
-
-        return  res.success(statements)
+        return res.success(state)
 
     def statements(self):
         res = ParseResult()
@@ -779,6 +775,7 @@ class Parser:
             self.advance()
 
         statement = res.register(self.statement())
+
         if res.error: return res
         statements.append(statement)
 
@@ -790,11 +787,12 @@ class Parser:
                 res.register_advancement()
                 self.advance()
                 newline_count += 1
-            if newline_count == 0:
+            if newline_count == 0 or self.current_tok.matches(TT_KEYWORD, 'STOP'):
                 more_statements = False
 
             if not more_statements: break
             statement = res.try_register(self.statement())
+            # print(statement)
             if not statement:
                 self.reverse(res.to_reverse_count)
                 more_statements = False
@@ -811,31 +809,11 @@ class Parser:
         res = ParseResult()
         pos_start = self.current_tok.pos_start.copy()
 
-        if self.current_tok.matches(TT_KEYWORD, 'RETURN'):
-            res.register_advancement()
-            self.advance()
-
-            expr = res.try_register(self.expr())
-            if not expr:
-                self.reverse(res.to_reverse_count)
-            return res.success(ReturnNode(expr, pos_start, self.current_tok.pos_start.copy()))
-
-        if self.current_tok.matches(TT_KEYWORD, 'CONTINUE'):
-            res.register_advancement()
-            self.advance()
-            return res.success(ContinueNode(pos_start, self.current_tok.pos_start.copy()))
-
-        if self.current_tok.matches(TT_KEYWORD, 'BREAK'):
-            res.register_advancement()
-            self.advance()
-            return res.success(BreakNode(pos_start, self.current_tok.pos_start.copy()))
-
         if self.current_tok.matches(TT_KEYWORD, 'VAR'):
             return res.failure(InvalidSyntaxError(
                  self.current_tok.pos_start, self.current_tok.pos_end,
                 "Variable cannot be declared inside the block"
             ))
-
 
         if self.current_tok.type == TT_IDENTIFIER:
             var_name = self.current_tok
@@ -957,8 +935,7 @@ class Parser:
                 "Expected AS keyword"
             ))
 
-        print("The Variables")
-        print(variables)
+
 
         res.register_advancement()
         self.advance()
@@ -979,9 +956,9 @@ class Parser:
                     self.current_tok.pos_start, self.current_tok.pos_end,
                     "Expected value of " + type_spec
                 ))
-            print("the loop is working")
-
-        print("Now returning the VARs")
+        #     print("the loop is working")
+        #
+        # print("Now returning the VARs")
         # return res.success(assigned_Vars)
         return res.success(ListNode(
             assigned_Vars,
@@ -2557,8 +2534,8 @@ class Interpreter:
     def visit_VarAssignNode(self, node, context):
         res = RTResult()
         var_name = node.var_name_tok.value
-        print("this is from var assign node")
-        print(var_name)
+        # print("this is from var assign node")
+        # print(var_name)
         value = res.register(self.visit(node.value_node, context))
         if res.should_return(): return res
 

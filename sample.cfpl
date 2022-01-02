@@ -3,6 +3,10 @@
 * dkfjklsdfjls
 * this is comment
 
-OUTPUT:"Helloe #"
-OUTPUT: 9*9 & "#"
-OUTPUT: 9*9-867
+VAR a = 1 AS INT
+
+START
+    a = 100
+    OUTPUT: "helooo " & a
+
+STOP
