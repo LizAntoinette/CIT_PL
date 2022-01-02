@@ -4,11 +4,12 @@ while True:
 	fn = input('> ')
 	if fn.strip() == "": continue
 
+
 	try:
 		with open(fn, "r") as f:
 			script = f.read()
 	except Exception as e:
-		print("failed to load the shit")
+		print("failed to load goes brrr")
 
 	result, error = Practice.run('<stdin>', script)
 
