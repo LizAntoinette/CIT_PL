@@ -874,7 +874,7 @@ class Parser:
                     self.advance()
 
 
-            print(in_var)
+
 
             values = None
             while True:
@@ -2509,8 +2509,10 @@ class Interpreter:
         elements = []
 
         for element_node in node.element_nodes:
-            elements.append(res.register(self.visit(element_node, context)))
-            if res.should_return(): return res
+            el = res.register(self.visit(element_node, context))
+            if type(element_node).__name__ != "VarAssignNode":
+                elements.append(el)
+                if res.should_return(): return res
 
         return res.success(
             List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
@@ -2540,7 +2542,11 @@ class Interpreter:
         if res.should_return(): return res
 
         context.symbol_table.set(var_name, value)
+
+
         return res.success(value)
+        # return res.success()
+
 
     def visit_BinOpNode(self, node, context):
         res = RTResult()
@@ -2780,6 +2786,7 @@ def run(fn, text):
     tokens, error = lexer.make_tokens()
     if error: return None, error
 
+
     # Generate AST
     parser = Parser(tokens)
     ast = parser.parse()
@@ -2789,6 +2796,8 @@ def run(fn, text):
     interpreter = Interpreter()
     context = Context('<program>')
     context.symbol_table = global_symbol_table
+
     result = interpreter.visit(ast.node, context)
+
 
     return result.value, result.error

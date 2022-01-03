@@ -7,6 +7,6 @@ VAR a = 1 AS INT
 
 START
     a = 100
-    OUTPUT: "helooo " & a
+    OUTPUT: "helooo " & a & " " &(9 * 8)
 
 STOP
