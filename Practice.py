@@ -504,6 +504,14 @@ class VarAccessNode:
         self.pos_start = self.var_name_tok.pos_start
         self.pos_end = self.var_name_tok.pos_end
 
+class VarDeclareNode:
+    def __init__(self, var_name_tok, value_node):
+        self.var_name_tok = var_name_tok
+        self.value_node = value_node
+
+        self.pos_start = self.var_name_tok.pos_start
+        self.pos_end = self.value_node.pos_end
+
 
 class VarAssignNode:
     def __init__(self, var_name_tok, value_node):
@@ -949,7 +957,7 @@ class Parser:
                                                                           self.current_tok.pos_end)
 
             if self.type_matches(type_spec, type_var):
-                assigned_Vars.append(VarAssignNode(var[0], type_var))
+                assigned_Vars.append(VarDeclareNode(var[0], type_var))
 
             else:
                 return res.failure(InvalidSyntaxError(
@@ -1710,8 +1718,7 @@ class Parser:
             res.register_advancement()
             self.advance()
             right = res.register(func_b())
-            # if self.current_tok.type == TT_EQ:
-            #     return res.success(VarAssignNode(left, right))
+
             if res.error: return res
             left = BinOpNode(left, op_tok, right)
 
@@ -2513,9 +2520,9 @@ class Interpreter:
 
         for element_node in node.element_nodes:
             el = res.register(self.visit(element_node, context))
-            if type(element_node).__name__ != "VarAssignNode":
+            if type(element_node).__name__ not in ("VarAssignNode", "VarDeclareNode"):
                 elements.append(el)
-                if res.should_return(): return res
+            if res.should_return(): return res
 
         return res.success(
             List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
@@ -2536,7 +2543,7 @@ class Interpreter:
         value = value.copy().set_pos(node.pos_start, node.pos_end).set_context(context)
         return res.success(value)
 
-    def visit_VarAssignNode(self, node, context):
+    def visit_VarDeclareNode(self, node, context):
         res = RTResult()
         var_name = node.var_name_tok.value
         # print("this is from var assign node")
@@ -2549,6 +2556,25 @@ class Interpreter:
 
         return res.success(value)
         # return res.success()
+
+    def visit_VarAssignNode(self, node, context):
+        res = RTResult()
+        var_name = node.var_name_tok.value
+
+        var_exists = context.symbol_table.var_exists(var_name)
+
+        if not var_exists:
+            return res.failure(RTError(
+                node.pos_start, node.pos_end,
+                f"'{var_name}' is not declared", context
+            ))
+
+        value = res.register(self.visit(node.value_node, context))
+        if res.should_return(): return res
+
+        context.symbol_table.set(var_name, value)
+
+        return res.success(value)
 
 
     def visit_BinOpNode(self, node, context):

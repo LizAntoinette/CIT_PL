@@ -4,9 +4,13 @@
 * this is comment
 
 VAR a = 1 AS INT
+VAR b AS FLOAT
 
 START
     a = 100
-    OUTPUT: "helooo " & a & " " &(9 * 8)
+    d = 85945
+    OUTPUT: "helooo " & a & " " &(9 * 8) & "#"
+    OUTPUT: a & "#"
 
+    OUTPUT: b & "#"
 STOP
