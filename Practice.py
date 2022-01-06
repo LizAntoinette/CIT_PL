@@ -2465,6 +2465,9 @@ class SymbolTable:
     def set(self, name, value):
         self.symbols[name] = value
 
+    def var_exists(self, name):
+        return name in self.symbols
+
     def remove(self, name):
         del self.symbols[name]
 
