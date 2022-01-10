@@ -1524,37 +1524,19 @@ class Parser:
         condition = res.register(self.expr())
         if res.error: return res
 
-        if not self.current_tok.matches(TT_KEYWORD, 'THEN'):
+        if not self.current_tok.type == TT_NEWLINE:
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
-                f"Expected 'THEN'"
+                f"Expected a newline here"
             ))
 
         res.register_advancement()
         self.advance()
 
-        if self.current_tok.type == TT_NEWLINE:
-            res.register_advancement()
-            self.advance()
-
-            body = res.register(self.statements())
-            if res.error: return res
-
-            if not self.current_tok.matches(TT_KEYWORD, 'END'):
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    f"Expected 'END'"
-                ))
-
-            res.register_advancement()
-            self.advance()
-
-            return res.success(WhileNode(condition, body, True))
-
-        body = res.register(self.statement())
+        body = res.register(self.block())
         if res.error: return res
 
-        return res.success(WhileNode(condition, body, False))
+        return res.success(WhileNode(condition, body, True))
 
     def func_def(self):
         res = ParseResult()
