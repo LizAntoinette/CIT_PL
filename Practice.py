@@ -512,6 +512,13 @@ class VarDeclareNode:
         self.pos_start = self.var_name_tok.pos_start
         self.pos_end = self.value_node.pos_end
 
+class InputNode:
+    def __init__(self, var_names, pos_start, pos_end):
+        self.var_names = var_names
+
+
+        self.pos_start = pos_start
+        self.pos_end = pos_end
 
 class VarAssignNode:
     def __init__(self, var_name_tok, value_node):
@@ -724,17 +731,11 @@ class Parser:
         block = None
 
 
-        # redundant here for the start keyword... will fix this
-        if not self.current_tok.matches(TT_KEYWORD, 'START'):
-            return res.failure(InvalidSyntaxError(
-                self.current_tok.pos_start, self.current_tok.pos_end,
-                "Expected START keyword"
-            ))
-        else:
-            block = res.register(self.block());
-            statements.append(block)
 
-            if res.error: return res
+        block = res.register(self.block());
+        statements.append(block)
+
+        if res.error: return res
 
 
         return res.success(ListNode(
@@ -842,6 +843,11 @@ class Parser:
             if res.error: return res
             return res.success(VarAssignNode(var_name, value))
 
+        if self.current_tok.matches(TT_KEYWORD, 'IF'):
+            if_expr = res.register(self.if_expression())
+            if res.error: return res
+            return res.success(if_expr)
+
         if self.current_tok.matches(TT_KEYWORD, 'OUTPUT'):
             res.register_advancement()
             self.advance()
@@ -862,6 +868,7 @@ class Parser:
             return res.success(expr)
 
         if self.current_tok.matches(TT_KEYWORD, 'INPUT'):
+            pos_start = self.current_tok.pos_start.copy()
             res.register_advancement()
             self.advance()
             if self.current_tok.type != TT_COLON:
@@ -883,29 +890,9 @@ class Parser:
                     res.register_advancement()
                     self.advance()
 
+            print(in_var)
 
-
-
-            values = None
-            while True:
-                text = input()
-                values = text.split(',')
-                values = [NumberNode(Token(TT_INT, int(x.strip()), pos_start,self.current_tok.pos_end.copy())) for x in values]
-                if(count_id == len(values)):
-                    break
-                else:
-                    print(f"'{text}' must be an integer. Try again!")
-
-            assigned_vars = []
-            for ctr in range(count_id):
-                assigned_vars.append(VarAssignNode(in_var[ctr], values[ctr]))
-
-
-            return res.success(ListNode(
-                assigned_vars,
-                pos_start,
-                self.current_tok.pos_end.copy()
-            ))
+            return res.success(InputNode(in_var, pos_start, self.current_tok.pos_end))
 
 
 
@@ -1018,7 +1005,6 @@ class Parser:
     # next time nala it default dinhi heheh
     def default_value(self, token, pos_start, pos):
         if token== 'INT':
-            print(int('0'))
             return NumberNode(Token(TT_INT, int('0'), pos_start, pos))
         elif token == 'CHAR':
             return CharNode(Token(TT_CHAR, '', pos_start, pos))
@@ -1205,10 +1191,6 @@ class Parser:
             if res.error: return res
             return res.success(list_expr)
 
-        elif tok.matches(TT_KEYWORD, 'IF'):
-            if_expr = res.register(self.if_expression())
-            if res.error: return res
-            return res.success(if_expr)
 
         elif tok.matches(TT_KEYWORD, 'FOR'):
             for_expr = res.register(self.for_expr())
@@ -2500,6 +2482,48 @@ class Interpreter:
 
         return res.success(value)
         # return res.success()
+
+    def visit_InputNode(self, node, context):
+        res = RTResult()
+        vars = node.var_names
+
+        in_value = None
+
+        # values = None
+        # while True:
+        #     text = input()
+        #     values = text.split(',')
+        #     values = [x.strip() for x in values]
+        #     if (len(vars) == len(values)):
+        #         break
+        #     else:
+        #         print(f"Number of inputs is either more or less than expected. Try again!")
+        # print(values)
+        # for x in range(len(vars)):
+        #     val = None
+        #     print(vars[x])
+        #     print(context.symbol_table.var_exists(vars[x]))
+        #     if context.symbol_table.var_exists(vars[x]):
+        #         val_type = f'{type(context.symbol_table.get(vars[x]))}'
+        #         method = getattr(self, val_type)
+        #         val = method(values[x])
+        #
+        #     else:
+        #         return res.failure(RTError(
+        #             node.pos_start, node.pos_end,
+        #             f"'{vars[x]}' is not declared", context
+        #         ))
+        #     value = res.register(self.visit(node.val, context))
+        #     if res.should_return(): return res
+        #     in_value.append(value)
+        #
+        #     context.symbol_table.set(vars[x], value)
+
+        return res.success(
+            InputNode(vars).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
+
+
 
     def visit_VarAssignNode(self, node, context):
         res = RTResult()

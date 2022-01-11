@@ -944,14 +944,14 @@ class Parser:
         res = ParseResult()
         pos_start = self.current_tok.pos_start.copy()
 
-        if self.current_tok.matches(TT_KEYWORD, 'INPUT'):
-            res.register_advancement()
-            self.advance()
-
-            expr = res.try_register(self.expr())
-            if not expr:
-                self.reverse(res.to_reverse_count)
-            return res.success(ReturnNode(expr, pos_start, self.current_tok.pos_start.copy()))
+        # if self.current_tok.matches(TT_KEYWORD, 'INPUT'):
+        #     res.register_advancement()
+        #     self.advance()
+        #
+        #     expr = res.try_register(self.expr())
+        #     if not expr:
+        #         self.reverse(res.to_reverse_count)
+        #     return res.success(ReturnNode(expr, pos_start, self.current_tok.pos_start.copy()))
 
         if self.current_tok.matches(TT_KEYWORD, 'OUTPUT'):
             res.register_advancement()
