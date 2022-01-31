@@ -1372,6 +1372,12 @@ class Parser:
         res.register_advancement()
         self.advance()
 
+        if not self.current_tok.type == TT_LPAREN:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                f"Expected Left Parenthesis"
+            ))
+
         condition = res.register(self.expr())
         if res.error: return res
 
@@ -1414,6 +1420,7 @@ class Parser:
 
             res.register_advancement()
             self.advance()
+
 
             statements = res.register(self.block())
             if res.error: return res
@@ -1519,6 +1526,12 @@ class Parser:
 
         res.register_advancement()
         self.advance()
+
+        if not self.current_tok.type == TT_LPAREN:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                f"Expected Left Parenthesis"
+            ))
 
         condition = res.register(self.expr())
         if res.error: return res

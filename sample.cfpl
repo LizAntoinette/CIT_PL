@@ -16,17 +16,16 @@ START
 *    OUTPUT: "This is the a " & a & " and b " & b & " before "& "#"
 *    INPUT: a, b
     OUTPUT: "Before if "& "#"
-    IF( d == 900)
+    WHILE ( a < 6)
     START
-        OUTPUT: "Hey this works like i dunno man"
-        IF( "TRUE")
+        b = 0
+        WHILE( b < a)
         START
-            OUTPUT: "I think this works with nested..."
+            OUTPUT: "*"
+            b = b + 1
         STOP
+        OUTPUT: "#"
+        a = a+1
+    STOP
 
-    STOP
-    ELSE
-    START
-        OUTPUT:"Else works as weellllll"
-    STOP
 STOP
