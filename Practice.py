@@ -2471,7 +2471,10 @@ class SymbolTable:
         self.symbols[name] = value
 
     def var_exists(self, name):
-        return name in self.symbols
+        exists = name in self.symbols
+        if exists == False and self.parent:
+            return self.parent.var_exists(name)
+        return exists
 
 
     def remove(self, name):
@@ -2553,13 +2556,6 @@ class Interpreter:
 
 
         return res.success(value)
-        # return res.success()
-
-     #def visit_InputNode(self, node, context):
-
-        # return res.success(
-        #     InputNode(vars).set_context(context).set_pos(node.pos_start, node.pos_end)
-        # )
 
 
 
@@ -2594,15 +2590,6 @@ class Interpreter:
 
         if node.op_tok.type == TT_AMPERSAND:
             result, error = left.added_to(right)
-        # elif node.op_tok.type == TT_EQ:
-        #     var_name = node.left_node.var_name_tok.value
-        #     print("this is from binOp")
-        #     print(var_name)
-        #     value = res.register(self.visit(node.right_node, context))
-        #     if res.should_return(): return res
-        #
-        #     context.symbol_table.set(var_name, value)
-        #     return res.success(value)
         elif node.op_tok.type == TT_PLUS:
             result, error = left.added_to(right)
         elif node.op_tok.type == TT_MINUS:

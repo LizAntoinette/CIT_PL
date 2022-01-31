@@ -1,0 +1,17 @@
+* Author: Liz Antoinette A. Anguren
+* This is a factorial program for CFPL
+
+VAR n = 1, i = 1, number = 5 AS INT
+
+START
+    OUTPUT: "INPUT a number to do factorial: "
+    INPUT: number
+    WHILE(i <= number)
+    START
+*         OUTPUT: "variable i is actually working - see:" & i
+         n = n * i
+         i = i + 1
+    STOP
+    OUTPUT: "#Factorial of " & number & " is: "& n & "#"
+
+STOP
