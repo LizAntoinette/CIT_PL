@@ -11,9 +11,22 @@ VAR l AS CHAR
 START
     d = 900
 *   OUTPUT: "Hello there gurl"&"#"
-    OUTPUT: d
+*    OUTPUT: d
 *    OUTPUT: "Input something for a b and c" & "#"
-    OUTPUT: "This is the a " & a & " and b " & b & " before "& "#"
-    INPUT: a, b
-    OUTPUT: "This is the a " & a & " and b " & b & " after "& "#"
+*    OUTPUT: "This is the a " & a & " and b " & b & " before "& "#"
+*    INPUT: a, b
+    OUTPUT: "Before if "& "#"
+    IF( d == 900)
+    START
+        OUTPUT: "Hey this works like i dunno man"
+        IF( "TRUE")
+        START
+            OUTPUT: "I think this works with nested..."
+        STOP
+
+    STOP
+    ELSE
+    START
+        OUTPUT:"Else works as weellllll"
+    STOP
 STOP

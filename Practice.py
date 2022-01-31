@@ -1273,6 +1273,10 @@ class Parser:
             if res.error: return res
             return res.success(list_expr)
 
+        elif tok.matches(TT_KEYWORD, 'IF'):
+            if_expr = res.register(self.if_expression())
+            if res.error: return res
+            return res.success(if_expr)
 
         elif tok.matches(TT_KEYWORD, 'FOR'):
             for_expr = res.register(self.for_expr())
