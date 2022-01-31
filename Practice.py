@@ -119,8 +119,8 @@ TT_POW = 'POW'
 TT_EQ = 'EQ'
 TT_LPAREN = 'LPAREN'
 TT_RPAREN = 'RPAREN'
-TT_LSQUARE = 'LSQUARE'
-TT_RSQUARE = 'RSQUARE'
+# TT_LSQUARE = 'LSQUARE'
+# TT_RSQUARE = 'RSQUARE'
 TT_EE = 'EE'
 TT_NE = 'NE'
 TT_LT = 'LT'
@@ -242,12 +242,12 @@ class Lexer:
             elif self.current_char == ')':
                 tokens.append(Token(TT_RPAREN, pos_start=self.pos))
                 self.advance()
-            elif self.current_char == '[':
-                tokens.append(Token(TT_LSQUARE, pos_start=self.pos))
-                self.advance()
-            elif self.current_char == ']':
-                tokens.append(Token(TT_RSQUARE, pos_start=self.pos))
-                self.advance()
+            # elif self.current_char == '[':
+            #     tokens.append(Token(TT_LSQUARE, pos_start=self.pos))
+            #     self.advance()
+            # elif self.current_char == ']':
+            #     tokens.append(Token(TT_RSQUARE, pos_start=self.pos))
+            #     self.advance()
             elif self.current_char == '!':
                 token, error = self.make_not_equals()
                 if error: return [], error
@@ -1268,10 +1268,10 @@ class Parser:
                     "Expected ')'"
                 ))
 
-        elif tok.type == TT_LSQUARE:
-            list_expr = res.register(self.list_expr())
-            if res.error: return res
-            return res.success(list_expr)
+        # elif tok.type == TT_LSQUARE:
+        #     list_expr = res.register(self.list_expr())
+        #     if res.error: return res
+        #     return res.success(list_expr)
 
         elif tok.matches(TT_KEYWORD, 'IF'):
             if_expr = res.register(self.if_expression())
@@ -1303,52 +1303,52 @@ class Parser:
             "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'WHILE', 'FUN'"
         ))
 
-    def list_expr(self):
-        res = ParseResult()
-        element_nodes = []
-        pos_start = self.current_tok.pos_start.copy()
-
-        if self.current_tok.type != TT_LSQUARE:
-            return res.failure(InvalidSyntaxError(
-                self.current_tok.pos_start, self.current_tok.pos_end,
-                f"Expected '['"
-            ))
-
-        res.register_advancement()
-        self.advance()
-
-        if self.current_tok.type == TT_RSQUARE:
-            res.register_advancement()
-            self.advance()
-        else:
-            element_nodes.append(res.register(self.expr()))
-            if res.error:
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    "Expected ']', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
-                ))
-
-            while self.current_tok.type == TT_COMMA:
-                res.register_advancement()
-                self.advance()
-
-                element_nodes.append(res.register(self.expr()))
-                if res.error: return res
-
-            if self.current_tok.type != TT_RSQUARE:
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    f"Expected ',' or ']'"
-                ))
-
-            res.register_advancement()
-            self.advance()
-
-        return res.success(ListNode(
-            element_nodes,
-            pos_start,
-            self.current_tok.pos_end.copy()
-        ))
+    # def list_expr(self):
+    #     res = ParseResult()
+    #     element_nodes = []
+    #     pos_start = self.current_tok.pos_start.copy()
+    #
+    #     if self.current_tok.type != TT_LSQUARE:
+    #         return res.failure(InvalidSyntaxError(
+    #             self.current_tok.pos_start, self.current_tok.pos_end,
+    #             f"Expected '['"
+    #         ))
+    #
+    #     res.register_advancement()
+    #     self.advance()
+    #
+    #     if self.current_tok.type == TT_RSQUARE:
+    #         res.register_advancement()
+    #         self.advance()
+    #     else:
+    #         element_nodes.append(res.register(self.expr()))
+    #         if res.error:
+    #             return res.failure(InvalidSyntaxError(
+    #                 self.current_tok.pos_start, self.current_tok.pos_end,
+    #                 "Expected ']', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+    #             ))
+    #
+    #         while self.current_tok.type == TT_COMMA:
+    #             res.register_advancement()
+    #             self.advance()
+    #
+    #             element_nodes.append(res.register(self.expr()))
+    #             if res.error: return res
+    #
+    #         if self.current_tok.type != TT_RSQUARE:
+    #             return res.failure(InvalidSyntaxError(
+    #                 self.current_tok.pos_start, self.current_tok.pos_end,
+    #                 f"Expected ',' or ']'"
+    #             ))
+    #
+    #         res.register_advancement()
+    #         self.advance()
+    #
+    #     return res.success(ListNode(
+    #         element_nodes,
+    #         pos_start,
+    #         self.current_tok.pos_end.copy()
+    #     ))
 
 
     def if_expression(self):
@@ -2030,6 +2030,12 @@ class Char(Value):
         copy.set_pos(self.pos_start, self.pos_end)
         copy.set_context(self.context)
         return copy
+
+    def added_to(self, other):
+        if isinstance(other, String) or isinstance(other, Number):
+            return String(f'{self.value}{other.value}').set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
     def __str__(self):
         return self.value

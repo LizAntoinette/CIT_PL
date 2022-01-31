@@ -6,12 +6,11 @@
 VAR a = 1 AS INT
 VAR b, c, d AS INT
 VAR x AS FLOAT
-VAR l = 'c'  AS CHAR
+VAR l AS CHAR
 
 START
     d = 900
-    OUTPUT: l & "#"
-    OUTPUT: "[[]" & a & "[]]"
+*    OUTPUT: “[[]” & d & “[]]”
 *   OUTPUT: "Hello there gurl"&"#"
 *    OUTPUT: d
 *    OUTPUT: "Input something for a b and c" & "#"

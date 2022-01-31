@@ -122,6 +122,7 @@ TT_POW = 'POW'
 TT_EQ = 'EQ'
 TT_LPAREN = 'LPAREN'
 TT_RPAREN = 'RPAREN'
+
 TT_EE = 'EE'
 TT_NE = 'NE'
 TT_LT = 'LT'
