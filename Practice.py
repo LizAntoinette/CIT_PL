@@ -205,7 +205,7 @@ class Lexer:
         tokens = []
         prev = None
         while self.current_char != None:
-            if self.current_char in (' \t', '.', ' '):
+            if self.current_char in (' \t', '.', ' ',';'):
                 self.advance()
 
             elif self.current_char in '\n':
@@ -404,6 +404,8 @@ class Lexer:
         tok_type = Token(TT_NEWLINE, pos_start=self.pos)
         self.advance()
 
+        while self.current_char == " ":
+            self.advance()
         if(self.current_char == "*"):
             self.advance()
             while self.current_char != '\n':
