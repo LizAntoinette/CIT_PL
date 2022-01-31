@@ -203,17 +203,15 @@ class Lexer:
 
     def make_tokens(self):
         tokens = []
-
+        prev = None
         while self.current_char != None:
-            if self.current_char in ' \t':
+            if self.current_char in (' \t', '.', ' '):
                 self.advance()
-            elif self.current_char == '*':
-                tok = self.skip_comment()
-                if(tok != None):
-                    tokens.append(tok)
+
             elif self.current_char in '\n':
-                tokens.append(Token(TT_NEWLINE, pos_start=self.pos))
-                self.advance()
+                # tokens.append(Token(TT_NEWLINE, pos_start=self.pos))
+                tokens.append(self.skip_comment())
+                # self.advance()
             elif self.current_char in DIGITS:
                 tokens.append(self.make_number())
             elif self.current_char in LETTERS:
@@ -228,6 +226,14 @@ class Lexer:
             elif self.current_char == '&':
                 tokens.append(Token(TT_AMPERSAND, pos_start=self.pos))
                 self.advance()
+            elif self.current_char == '*':
+                if self.pos.ln == 0:
+                    self.advance()
+                    while self.current_char != '\n':
+                        self.advance()
+                else:
+                    tokens.append(Token(TT_MUL, pos_start=self.pos))
+                    self.advance()
             elif self.current_char == '-':
                 tokens.append(self.make_minus_or_arrow())
             elif self.current_char == '/':
@@ -264,11 +270,13 @@ class Lexer:
             elif self.current_char == ':':
                 tokens.append(Token(TT_COLON, pos_start=self.pos))
                 self.advance()
+
             else:
                 pos_start = self.pos.copy()
                 char = self.current_char
                 self.advance()
                 return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
+
 
         tokens.append(Token(TT_EOF, pos_start=self.pos))
         return tokens, None
@@ -392,6 +400,18 @@ class Lexer:
         self.advance()
         return None, ExpectedCharError(pos_start, self.pos, "'=' (after '!')")
 
+    def skip_comment(self):
+        tok_type = Token(TT_NEWLINE, pos_start=self.pos)
+        self.advance()
+
+        if(self.current_char == "*"):
+            self.advance()
+            while self.current_char != '\n':
+                self.advance()
+
+        return tok_type
+
+
     def make_equals(self):
         tok_type = TT_EQ
         pos_start = self.pos.copy()
@@ -429,15 +449,7 @@ class Lexer:
 
         return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
-    def skip_comment(self):
-        if(self.pos.col == 0):
-            self.advance()
-            while self.current_char != '\n':
-                self.advance()
-            self.advance()
-        else:
-            self.advance()
-            return Token(TT_MUL, pos_start=self.pos)
+
 
 
 
@@ -712,12 +724,13 @@ class Parser:
         statements = []
         pos_start = self.current_tok.pos_start.copy()
 
-        while self.current_tok.matches(TT_KEYWORD, 'VAR') or self.current_tok.type == TT_NEWLINE:
+        while self.current_tok.matches(TT_KEYWORD, 'VAR') or self.current_tok.type == TT_NEWLINE or self.current_tok.type == TT_MUL:
             current_tok = self.current_tok
             res.register_advancement()
             self.advance()
-            if current_tok.type == TT_NEWLINE:
+            if current_tok.type in (TT_NEWLINE, TT_MUL):
                 continue
+
             variables = res.register(self.var_dec())
             if res.error:
                 return res.failure(InvalidSyntaxError(
