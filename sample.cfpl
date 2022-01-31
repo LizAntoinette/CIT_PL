@@ -9,11 +9,11 @@ VAR x AS FLOAT
 VAR l AS CHAR
 
 START
-*    d = 900
+    d = 900
 *   OUTPUT: "Hello there gurl"&"#"
-*    OUTPUT: d
+    OUTPUT: d
 *    OUTPUT: "Input something for a b and c" & "#"
-*    OUTPUT: d & " " & b & " " & c & "#"
-    INPUT: a, b, c, x, l
-
+    OUTPUT: "This is the a " & a & " and b " & b & " before "& "#"
+    INPUT: a, b
+    OUTPUT: "This is the a " & a & " and b " & b & " after "& "#"
 STOP

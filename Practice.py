@@ -1202,10 +1202,14 @@ class Parser:
                         in_arg.append(self.current_tok.value)
                         res.register_advancement()
                         self.advance()
+
                     if res.error: return res
 
-                str_in = StringNode(Token(TT_STRING,','.join(in_arg), self.current_tok.pos_start, self.current_tok.pos_end))
-                arg_nodes.append(str_in)
+
+                if (str(curr) == "INPUT"):
+                    str_in = StringNode(Token(TT_STRING, ','.join(in_arg), self.current_tok.pos_start, self.current_tok.pos_end))
+
+                    arg_nodes.append(str_in)
 
 
             return res.success(CallNode(atom, arg_nodes))
@@ -2166,9 +2170,13 @@ class BuiltInFunction(BaseFunction):
         res.register(self.check_and_populate_args(method.arg_names, args, exec_ctx))
         if res.should_return(): return res
 
-        return_value = res.register(method(exec_ctx))
-        if res.should_return(): return res
-        return res.success(return_value)
+        if (self.name == "input"):
+            return method(exec_ctx)
+        else:
+            return_value = res.register(method(exec_ctx))
+
+            if res.should_return(): return res
+            return res.success(return_value)
 
     def no_visit_method(self, node, context):
         raise Exception(f'No execute_{self.name} method defined')
@@ -2198,36 +2206,42 @@ class BuiltInFunction(BaseFunction):
     def execute_input(self, exec_ctx):
         str_args = str(exec_ctx.symbol_table.get('value')).split(',')
         while True:
-            args = []
             text = input()
             str_in = text.split(',')
             if(len(str_in) == len(str_args)):
-                for x in str_args:
-                    args.append(self.convertStringtoVariables(exec_ctx.symbol_table.get(x).value))
-                    print(isinstance(exec_ctx.symbol_table.get(x).value,float))
+                for x in range(len(str_args)):
+
+                    in_arg = self.convertStringtoVariables(exec_ctx.symbol_table.get(str_args[x]).value, str_in[x])
+                    if(in_arg == None):
+                        break
+                    else:
+                        exec_ctx.symbol_table.set(str_args[x], in_arg)
+                break
 
             else:
                 print("number of input is less than or more than expected")
-        return RTResult().success(String(text))
+        return exec_ctx.symbol_table
+        # return RTResult().success(Number.null)
 
     execute_input.arg_names = ['value']
 
-    def convertStringtoVariables(self, str):
-        type = type(str)
+    def convertStringtoVariables(self, class_type, str):
+
         # input = None
-        str = str.trim()
+        str = str.strip()
         try:
-            if isinstance(type, int):
+            if isinstance(class_type, int):
                 return Number(int(str))
-            elif isinstance(type, float):
+            elif isinstance(class_type, float):
                 return Number(float(str))
-            elif isinstance(type, bool):
+            elif isinstance(class_type, bool):
                 return Bool(bool(str))
-            elif isinstance(type, string) and len(str)==1:
-                return String(str)
+            elif isinstance(class_type, string) and len(str)==1:
+                return Char(str)
 
         except ValueError:
             print(f"'{str}' is an invalid input. Try again!")
+            return None
 
 
 
@@ -2728,7 +2742,6 @@ class Interpreter:
     def visit_CallNode(self, node, context):
         res = RTResult()
         args = []
-
         value_to_call = res.register(self.visit(node.node_to_call, context))
         if res.should_return(): return res
         value_to_call = value_to_call.copy().set_pos(node.pos_start, node.pos_end)
@@ -2737,13 +2750,16 @@ class Interpreter:
             args.append(res.register(self.visit(arg_node, context)))
             if res.should_return(): return res
 
+        if(str(node.node_to_call.var_name_tok.value) == "INPUT"):
+            context.symbol_table = value_to_call.execute(args)
+            return res.success(Number(0).set_context(context).set_pos(node.pos_start, node.pos_end))
+        else:
+            return_value = res.register(value_to_call.execute(args))
 
-        return_value = res.register(value_to_call.execute(args))
+            if res.should_return(): return res
 
-        if res.should_return(): return res
-
-        return_value = return_value.copy().set_pos(node.pos_start, node.pos_end).set_context(context)
-        return res.success(return_value)
+            return_value = return_value.copy().set_pos(node.pos_start, node.pos_end).set_context(context)
+            return res.success(return_value)
 
     def visit_ReturnNode(self, node, context):
         res = RTResult()
