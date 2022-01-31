@@ -6,11 +6,14 @@
 VAR a = 1 AS INT
 VAR b, c, d AS INT
 VAR x AS FLOAT
+VAR l AS CHAR
 
 START
-    OUTPUT: "Input something for a b and c" & "#"
-
-
-    OUTPUT: d & " " & b & " " & c & "#"
+*    d = 900
+*   OUTPUT: "Hello there gurl"&"#"
+*    OUTPUT: d
+*    OUTPUT: "Input something for a b and c" & "#"
+*    OUTPUT: d & " " & b & " " & c & "#"
+    INPUT: a, b, c, x, l
 
 STOP
