@@ -1,6 +1,6 @@
 # CIT Programming Language Interpreter
 
-A Programming Language Course Project: CFPL Interpreter (Early Version)
+A Programming Language Course Project: CFPL Interpreter _**(Earliest Version)**_
 
 ## Files
 
