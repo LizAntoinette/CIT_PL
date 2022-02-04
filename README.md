@@ -20,7 +20,7 @@ A Programming Language Course Project: CFPL Interpreter _**(Earliest Version)**_
 
 ## How to Run the Code
 
-    1. Run "shell.py*"
+    1. Run "shell.py"
     2. Type where the file of program your going to run for the interpreter.
 
 **Example:**
