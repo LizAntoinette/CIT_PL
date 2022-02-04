@@ -10,10 +10,10 @@ VAR l = 'c'  AS CHAR
 
 START
     d = 900
-    OUTPUT: l & "#"
+    OUTPUT: (900 == d)
     OUTPUT: "[[]" & a & "[]]"
     *   this should be working;;dlfsdkfjskldf
-*   OUTPUT: "Hello there gurl"&"#"
+*   OUTPUT: "Hello there gurl" & "#"
 *    OUTPUT: d
 *    OUTPUT: "Input something for a b and c" & "#"
 *    OUTPUT: "This is the a " & a & " and b " & b & " before "& "#"

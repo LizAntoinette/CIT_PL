@@ -1,14 +1,18 @@
-import basic
+import CFPL
 
 while True:
-	text = input('basic > ')
-	if text.strip() == "": continue
-	result, error = basic.run('<stdin>', text)
+	fn = input('> ')
+	if fn.strip() == "": continue
+	try:
+		with open(fn, "r") as f:
+			script = f.read()
+	except Exception as e:
+		print("failed to load goes brrr")
+	script = script.strip()
+	result, error = CFPL.run('<stdin>', script)
 
+	# result = ''.join(str(i) for i in result)
 	if error:
 		print(error.as_string())
 	elif result:
-		if len(result.elements) == 1:
-			print(repr(result.elements[0]))
-		else:
-			print(repr(result))
+		print(f'{result}')
