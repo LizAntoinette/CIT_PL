@@ -1,4 +1,4 @@
-# CIT_PL
+# CIT Programming Language Interpreter
 
 A Programming Language Course Project: CFPL Interpreter (Early Version)
 
@@ -24,4 +24,3 @@ A Programming Language Course Project: CFPL Interpreter (Early Version)
         ![img.png](img.png)
         or typing the example program here
         ![img_1.png](img_1.png)
-        
