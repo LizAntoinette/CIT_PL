@@ -858,140 +858,6 @@ class Parser:
             ))
         return res.success(expr)
 
-    # def statement(self):
-    #     res = ParseResult()
-    #     pos_start = self.current_tok.pos_start.copy()
-    #
-    #     if self.current_tok.matches(TT_KEYWORD, 'VAR'):
-    #         return res.failure(InvalidSyntaxError(
-    #              self.current_tok.pos_start, self.current_tok.pos_end,
-    #             "Variable cannot be declared inside the block"
-    #         ))
-    #
-    #     if self.current_tok.type == TT_IDENTIFIER:
-    #         var_name = self.current_tok
-    #         res.register_advancement()
-    #         self.advance()
-    #
-    #         if self.current_tok.type != TT_EQ:
-    #             return res.failure(InvalidSyntaxError(
-    #                 self.current_tok.pos_start, self.current_tok.pos_end,
-    #                 "Expected '='"
-    #             ))
-    #
-    #         res.register_advancement()
-    #         self.advance()
-    #         value = res.register(self.expr())  # Needs to edit here gurl
-    #         if res.error: return res
-    #         return res.success(VarAssignNode(var_name, value))
-    #
-    #     if self.current_tok.matches(TT_KEYWORD, 'IF'):
-    #         if_expr = res.register(self.if_expression())
-    #         if res.error: return res
-    #         return res.success(if_expr)
-
-        # if self.current_tok.matches(TT_KEYWORD, 'OUTPUT'):
-        #     res.register_advancement()
-        #     self.advance()
-        #     if self.current_tok.type != TT_COLON:
-        #         return res.failure(InvalidSyntaxError(
-        #             self.current_tok.pos_start, self.current_tok.pos_end,
-        #             "Expected Colon"
-        #         ))
-        #     res.register_advancement()
-        #     self.advance()
-        #     expr = res.register(self.expr())
-        #     if res.error:
-        #         return res.failure(InvalidSyntaxError(
-        #             self.current_tok.pos_start, self.current_tok.pos_end,
-        #             "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
-        #         ))
-        #
-        #     return res.success(expr)
-        #
-        # if self.current_tok.matches(TT_KEYWORD, 'INPUT'):
-        #     res.register_advancement()
-        #     self.advance()
-        #     if self.current_tok.type != TT_COLON:
-        #         return res.failure(InvalidSyntaxError(
-        #             self.current_tok.pos_start, self.current_tok.pos_end,
-        #             "Expected Colon"
-        #         ))
-        #     res.register_advancement()
-        #     self.advance()
-        #
-        #     in_var = []
-        #     count_id = 0
-        #     while self.current_tok.type == TT_IDENTIFIER:
-        #         in_var.append(self.current_tok)
-        #         res.register_advancement()
-        #         self.advance()
-        #         count_id += 1
-        #         if self.current_tok.type == TT_COMMA:
-        #             res.register_advancement()
-        #             self.advance()
-        #
-        #     print(in_var)
-        #
-        #     values = None
-        #     while True:
-        #         text = input()
-        #         values = text.split(',')
-        #         values = [NumberNode(Token(TT_INT, int(x.strip()), pos_start, self.current_tok.pos_end.copy())) for x in
-        #                   values]
-        #         if (count_id == len(values)):
-        #             break
-        #         else:
-        #             print(f"'{text}' must be an integer. Try again!")
-        #
-        #     assigned_vars = []
-        #     for ctr in range(count_id):
-        #         assigned_vars.append(VarAssignNode(in_var[ctr], values[ctr]))
-        #
-        #     return res.success(ListNode(
-        #         assigned_vars,
-        #         pos_start,
-        #         self.current_tok.pos_end.copy()
-        #     ))
-        # if self.current_tok.matches(TT_KEYWORD, 'INPUT'):
-        #     pos_start = self.current_tok.pos_start.copy()
-        #     res.register_advancement()
-        #     self.advance()
-        #     if self.current_tok.type != TT_COLON:
-        #         return res.failure(InvalidSyntaxError(
-        #             self.current_tok.pos_start, self.current_tok.pos_end,
-        #             "Expected Colon"
-        #         ))
-        #     res.register_advancement()
-        #     self.advance()
-        #
-        #     in_var = []
-        #     count_id = 0
-        #     while self.current_tok.type == TT_IDENTIFIER:
-        #         in_var.append(self.current_tok)
-        #         res.register_advancement()
-        #         self.advance()
-        #         count_id += 1
-        #         if self.current_tok.type == TT_COMMA:
-        #             res.register_advancement()
-        #             self.advance()
-        #
-        #     print(in_var)
-        #
-        #     return res.success(InputNode(in_var, pos_start, self.current_tok.pos_end))
-
-
-
-
-
-        # expr = res.register(self.expr())
-        # if res.error:
-        #     return res.failure(InvalidSyntaxError(
-        #         self.current_tok.pos_start, self.current_tok.pos_end,
-        #         "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
-        #     ))
-        # return res.success(expr)
-
     def var_dec(self):
         """declaration:  VAR set_variable (COMMA set_variable)* AS type_spec | empty"""
         res = ParseResult()
@@ -1296,11 +1162,6 @@ class Parser:
                     "Expected ')'"
                 ))
 
-        # elif tok.type == TT_LSQUARE:
-        #     list_expr = res.register(self.list_expr())
-        #     if res.error: return res
-        #     return res.success(list_expr)
-
         elif tok.matches(TT_KEYWORD, 'IF'):
             if_expr = res.register(self.if_expression())
             if res.error: return res
@@ -1321,63 +1182,10 @@ class Parser:
             if res.error: return res
             return res.success(func_def)
 
-        # elif tok.matches(TT_KEYWORD, 'INPUT'):
-        #     func_def = res.register(self.input_expr())
-        #     if res.error: return res
-        #     return res.success(func_def)
-
         return res.failure(InvalidSyntaxError(
             tok.pos_start, tok.pos_end,
             "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'WHILE', 'FUN'"
         ))
-
-    # def list_expr(self):
-    #     res = ParseResult()
-    #     element_nodes = []
-    #     pos_start = self.current_tok.pos_start.copy()
-    #
-    #     if self.current_tok.type != TT_LSQUARE:
-    #         return res.failure(InvalidSyntaxError(
-    #             self.current_tok.pos_start, self.current_tok.pos_end,
-    #             f"Expected '['"
-    #         ))
-    #
-    #     res.register_advancement()
-    #     self.advance()
-    #
-    #     if self.current_tok.type == TT_RSQUARE:
-    #         res.register_advancement()
-    #         self.advance()
-    #     else:
-    #         element_nodes.append(res.register(self.expr()))
-    #         if res.error:
-    #             return res.failure(InvalidSyntaxError(
-    #                 self.current_tok.pos_start, self.current_tok.pos_end,
-    #                 "Expected ']', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
-    #             ))
-    #
-    #         while self.current_tok.type == TT_COMMA:
-    #             res.register_advancement()
-    #             self.advance()
-    #
-    #             element_nodes.append(res.register(self.expr()))
-    #             if res.error: return res
-    #
-    #         if self.current_tok.type != TT_RSQUARE:
-    #             return res.failure(InvalidSyntaxError(
-    #                 self.current_tok.pos_start, self.current_tok.pos_end,
-    #                 f"Expected ',' or ']'"
-    #             ))
-    #
-    #         res.register_advancement()
-    #         self.advance()
-    #
-    #     return res.success(ListNode(
-    #         element_nodes,
-    #         pos_start,
-    #         self.current_tok.pos_end.copy()
-    #     ))
-
 
     def if_expression(self):
         res = ParseResult()
